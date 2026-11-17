@@ -3,6 +3,8 @@ import { useCallback, useState } from 'react';
 import { Modal, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { cloud, useCloud } from '@/cloud';
+import type { LeagueStanding } from '@/cloud/api';
 import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
@@ -257,12 +259,71 @@ function League() {
   );
 }
 
+/** Liga semanal com outras pessoas (Fase 4, opt-in). Mostra só apelido e XP. */
+function RealLeague({ standings }: { standings: LeagueStanding[] }) {
+  const tz = useGame((s) => s.state.profile.timeZone);
+  const now = useNow(60_000);
+  const left = daysLeftInWeek(now, tz);
+  return (
+    <View style={styles.mtLarge}>
+      <SectionHeader
+        title="Liga semanal"
+        right={
+          <AppText variant="caption">
+            {left === 0 ? 'termina hoje' : `termina em ${plural(left, 'dia', 'dias')}`}
+          </AppText>
+        }
+      />
+      <Card style={styles.noMt}>
+        <View style={styles.notice}>
+          <Icon name="info" size={15} color={colors.xp} />
+          <AppText variant="caption" style={styles.flex}>
+            Grupo de até 30 pessoas reais. Aparecem só apelido e XP da semana; valores investidos
+            nunca são compartilhados.
+          </AppText>
+        </View>
+        {standings.map((r) => (
+          <View
+            key={`${r.position}-${r.displayName}`}
+            style={[styles.leagueRow, r.isMe && styles.me]}
+            accessible
+            accessibilityLabel={`${r.position}º lugar: ${r.isMe ? `você, ${r.displayName}` : r.displayName}, ${r.xp} XP`}
+          >
+            <AppText style={styles.pos}>{r.position}º</AppText>
+            <View
+              style={[
+                styles.avatar,
+                { backgroundColor: r.isMe ? colors.gold : colors.surfaceRaised },
+              ]}
+            >
+              <AppText
+                style={[styles.initial, { color: r.isMe ? colors.textOnAccent : colors.textMuted }]}
+              >
+                {r.displayName.charAt(0).toUpperCase()}
+              </AppText>
+            </View>
+            <View style={styles.flex}>
+              <AppText style={styles.name}>
+                {r.isMe ? `${r.displayName} (você)` : r.displayName}
+              </AppText>
+            </View>
+            <AppText style={styles.xp}>{r.xp.toLocaleString('pt-BR')} XP</AppText>
+          </View>
+        ))}
+      </Card>
+    </View>
+  );
+}
+
 export default function GoalsScreen() {
   const doAct = useAct();
-  // Missão "Visitar a Liga": concluída ao abrir esta aba.
+  const publicLeague = useGame((s) => s.state.profile.publicLeague);
+  const realLeague = useCloud((s) => s.league);
+  // Missão "Visitar a Liga": concluída ao abrir esta aba. Atualiza a liga real, se houver.
   useFocusEffect(
     useCallback(() => {
       doAct({ type: 'VISIT', screen: 'league' });
+      void cloud?.syncLeague();
     }, [doAct]),
   );
   return (
@@ -270,7 +331,7 @@ export default function GoalsScreen() {
       <View style={styles.mt}>
         <Goals />
       </View>
-      <League />
+      {publicLeague && realLeague ? <RealLeague standings={realLeague.standings} /> : <League />}
     </Screen>
   );
 }

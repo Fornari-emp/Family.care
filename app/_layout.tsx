@@ -13,6 +13,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { Dialog } from '@/components/Dialog';
 import { FeedbackLayer } from '@/components/FeedbackLayer';
+import { FirstSyncChoice } from '@/components/FirstSyncChoice';
+import { cloud } from '@/cloud';
 import { dayKey } from '@/domain/dates';
 import { feedbackStore } from '@/feedback/feedbackStore';
 import { mapEvents } from '@/feedback/mapEvents';
@@ -56,13 +58,28 @@ export default function RootLayout() {
     return () => clearInterval(id);
   }, []);
 
-  // Ao voltar para o app, aplica a virada de dia/semana (sequência, baú, missões).
+  // Ao voltar para o app, aplica a virada de dia/semana e sincroniza com a nuvem.
   useEffect(() => {
     const sub = AppState.addEventListener('change', (s) => {
-      if (s === 'active' && gameStore.getState().hydrated) act({ type: 'SYNC' });
+      if (s === 'active' && gameStore.getState().hydrated) {
+        act({ type: 'SYNC' });
+        void cloud?.syncNow();
+      }
     });
     return () => sub.remove();
   }, []);
+
+  // Nuvem (Fase 4): só depois de carregar o estado local.
+  useEffect(() => {
+    if (!hydrated || !cloud) return;
+    let stop: (() => void) | undefined;
+    let alive = true;
+    void cloud.init().then((fn) => (alive ? (stop = fn) : fn()));
+    return () => {
+      alive = false;
+      stop?.();
+    };
+  }, [hydrated]);
 
   useEffect(() => {
     if (fontError)
@@ -86,6 +103,7 @@ export default function RootLayout() {
           <Stack.Screen name="dica" options={{ presentation: 'modal' }} />
         </Stack>
         <FeedbackLayer />
+        <FirstSyncChoice />
         <Dialog
           visible={!!issue}
           title="Aviso"

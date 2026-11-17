@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/AppText';
+import { AccountCard } from '@/components/AccountCard';
 import { BackupSettings } from '@/components/BackupSettings';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
@@ -141,6 +142,11 @@ export default function ProfileScreen() {
       <Card>
         <SectionHeader title="Lembrete" />
         <ReminderSettings />
+      </Card>
+
+      <Card>
+        <SectionHeader title="Conta e sincronização" />
+        <AccountCard />
       </Card>
 
       <Card>
