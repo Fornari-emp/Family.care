@@ -37,8 +37,7 @@ export function parseBRL(raw: string): Cents | null {
       if (!THOUSANDS_GROUPED.test(before)) return null;
       intPart = before.replace(/\./g, '');
     } else {
-      if (!DIGITS.test(before)) return null;
-      intPart = before;
+      intPart = before; // só dígitos: o texto já foi restrito a [0-9.,]
     }
     fracPart = after;
   } else if (text.includes('.')) {
@@ -55,7 +54,6 @@ export function parseBRL(raw: string): Cents | null {
     intPart = text;
   }
 
-  if (!DIGITS.test(intPart)) return null;
   const cents = Number(intPart) * 100 + Number(fracPart.padEnd(2, '0'));
   return Number.isSafeInteger(cents) ? cents : null;
 }

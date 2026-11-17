@@ -133,3 +133,15 @@ describe('contagem regressiva até meia-noite local', () => {
     expect(formatCountdown(-5)).toBe('00:00:00');
   });
 });
+
+describe('fuso padrão (America/Sao_Paulo) quando não informado', () => {
+  it('todas as funções usam São Paulo por padrão', () => {
+    const now = sp('2026-11-22T22:00:00');
+    expect(hourIn(now)).toBe(22);
+    expect(isoWeekKey(now)).toBe('2026-W47');
+    expect(daysLeftInWeek(now)).toBe(0);
+    expect(msUntilNextDay(now)).toBe(2 * 3600_000);
+    expect(startOfDayInstant('2026-11-23').toISOString()).toBe('2026-11-23T03:00:00.000Z');
+    expect(weekElapsedFraction(now)).toBeGreaterThan(0.9);
+  });
+});
