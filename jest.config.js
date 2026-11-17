@@ -5,6 +5,7 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
+  testMatch: ['**/__tests__/**/*.test.ts?(x)'],
   testPathIgnorePatterns: ['/node_modules/', '/coverage/'],
   collectCoverageFrom: ['src/domain/**/*.ts', 'src/store/**/*.ts', 'src/content/**/*.ts'],
   coverageThreshold: {

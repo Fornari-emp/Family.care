@@ -47,7 +47,7 @@ import {
   type DayError,
   type Reward,
 } from './rewards';
-import { buyItem, equipItem, unequipSlot, type ShopError } from './shop';
+import { buyItem, equipItem, getItem, unequipSlot, type ShopError } from './shop';
 import { defaultState } from './state';
 import { reconcileStreak, registerValidAction } from './streak';
 import type {
@@ -590,9 +590,7 @@ function handle(state: GameState, action: Action, ctx: Ctx, events: GameEvent[])
     case 'EQUIP': {
       const r = equipItem(state, action.itemId);
       if ('error' in r) return r;
-      const slot = (Object.keys(r.state.equipped) as ShopSlot[]).find(
-        (k) => r.state.equipped[k] === action.itemId,
-      ) as ShopSlot;
+      const slot = getItem(action.itemId)?.slot ?? 'suit';
       events.push({ type: 'equipped', itemId: action.itemId, slot });
       return r;
     }
@@ -633,12 +631,11 @@ function handle(state: GameState, action: Action, ctx: Ctx, events: GameEvent[])
 export function applyAction(state: GameState, action: Action, ctx: Ctx): Result {
   const events: GameEvent[] = [];
   const synced = sync(state, ctx.now, events);
+  const syncEventCount = events.length;
   const step = handle(synced, action, ctx, events);
   if ('error' in step) {
     // Descarta eventos da ação que falhou, mantém os da virada de dia.
-    const syncEvents: GameEvent[] = [];
-    sync(state, ctx.now, syncEvents);
-    return { state: synced, events: syncEvents, error: step.error };
+    return { state: synced, events: events.slice(0, syncEventCount), error: step.error };
   }
   let s = step.state;
   if (action.type !== 'RESET') {
