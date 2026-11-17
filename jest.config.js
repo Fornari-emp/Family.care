@@ -2,6 +2,7 @@
 module.exports = {
   preset: 'jest-expo',
   setupFiles: ['./jest.setup.js'],
+  resolver: 'react-native-reanimated/jest/resolver',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },

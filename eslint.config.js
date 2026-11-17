@@ -16,6 +16,18 @@ module.exports = defineConfig([
     },
   },
   {
+    files: ['scripts/**/*.js'],
+    languageOptions: {
+      globals: {
+        Buffer: 'readonly',
+        __dirname: 'readonly',
+        require: 'readonly',
+        console: 'readonly',
+      },
+    },
+    rules: { 'no-console': 'off' },
+  },
+  {
     files: ['__tests__/**/*', 'jest.setup.js'],
     languageOptions: { globals: { jest: 'readonly' } },
   },

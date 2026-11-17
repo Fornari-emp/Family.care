@@ -1,3 +1,7 @@
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
+
+jest.mock('expo-audio', () => ({
+  createAudioPlayer: jest.fn(() => ({ seekTo: jest.fn(), play: jest.fn() })),
+}));
