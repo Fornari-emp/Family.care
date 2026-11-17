@@ -13,11 +13,17 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { Dialog } from '@/components/Dialog';
 import { FeedbackLayer } from '@/components/FeedbackLayer';
+import { dayKey } from '@/domain/dates';
+import { feedbackStore } from '@/feedback/feedbackStore';
+import { mapEvents } from '@/feedback/mapEvents';
 import { act } from '@/feedback/useAct';
 import { gameStore, useGame } from '@/store';
 import { colors } from '@/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
+
+/** Garante as abas por baixo de telas modais abertas direto por link (ex.: /dica). */
+export const unstable_settings = { anchor: '(tabs)' };
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -34,7 +40,18 @@ export default function RootLayout() {
     gameStore
       .getState()
       .hydrate()
+      // Avisos da abertura (sequência quebrada, congelamento usado, semana encerrada…).
+      .then(() => feedbackStore.getState().push(mapEvents(gameStore.getState().lastEvents)))
       .catch((e: unknown) => console.warn('[invest-level] falha ao carregar', e));
+  }, []);
+
+  // Com o app aberto na virada da meia-noite local, renova baú, missões e sequência.
+  useEffect(() => {
+    const id = setInterval(() => {
+      const { hydrated: ok, state } = gameStore.getState();
+      if (ok && dayKey(new Date(), state.profile.timeZone) > state.daily.day) act({ type: 'SYNC' });
+    }, 30_000);
+    return () => clearInterval(id);
   }, []);
 
   // Ao voltar para o app, aplica a virada de dia/semana (sequência, baú, missões).
