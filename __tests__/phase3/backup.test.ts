@@ -1,3 +1,4 @@
+import { CURRENT_SCHEMA_VERSION } from '@/store/schema';
 import { applyAction } from '@/domain/engine';
 import { createGameStore } from '@/store/gameStore';
 import { exportBackup, importBackup } from '@/store/backup';
@@ -90,7 +91,7 @@ describe('aceite da Fase 3: importar o próprio backup restaura o estado idênti
     const reloaded = createGameStore({ storage, clock: () => NOW, logger: silent });
     await reloaded.getState().hydrate();
     expect(reloaded.getState().state).toEqual(original);
-    expect(storage.data.get(STORAGE_KEY)).toContain('"schemaVersion":2');
+    expect(storage.data.get(STORAGE_KEY)).toContain(`"schemaVersion":${CURRENT_SCHEMA_VERSION}`);
   });
 
   it('o estado importado continua jogável', () => {

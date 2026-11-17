@@ -1,3 +1,4 @@
+import { CURRENT_SCHEMA_VERSION } from '@/store/schema';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
@@ -41,7 +42,7 @@ describe('backup pela interface', () => {
     await waitFor(() => expect(share).toHaveBeenCalled());
     const msg = share.mock.calls[0]![0] as { message: string };
     expect(JSON.parse(msg.message)).toMatchObject({
-      schemaVersion: 2,
+      schemaVersion: CURRENT_SCHEMA_VERSION,
       data: { profile: { nickname: 'Ana' } },
     });
   });

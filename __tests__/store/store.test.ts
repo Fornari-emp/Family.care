@@ -1,3 +1,4 @@
+import { CURRENT_SCHEMA_VERSION } from '@/store/schema';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { defaultState } from '@/domain/state';
@@ -179,13 +180,31 @@ describe('migração do protótipo (v0 → v1)', () => {
     );
     const r = await loadState(storage, NOW, silent);
     expect(r.status).toBe('migrated');
-    expect(r.state).toEqual(current);
+    // v2 → v3 marca o estado local existente como atualizado "agora"
+    expect(r.state).toEqual({ ...current, updatedAt: NOW.toISOString() });
     expect(migrate({ schemaVersion: 1, data: 'x' }, NOW)).toEqual({ data: 'x', fromVersion: 1 });
+  });
+
+  it('v2 → v3: campos de sincronização', async () => {
+    const current = defaultState(NOW);
+    const { tombstones: _t, updatedAt: _u, ...rest } = current;
+    const { publicLeague: _p, ...profileV2 } = current.profile;
+    const storage = new MemoryStorage();
+    storage.data.set(
+      STORAGE_KEY,
+      JSON.stringify({ schemaVersion: 2, data: { ...rest, profile: profileV2 } }),
+    );
+    const r = await loadState(storage, NOW, silent);
+    expect(r.status).toBe('migrated');
+    expect(r.state).toEqual({ ...current, updatedAt: NOW.toISOString() });
+    expect(migrate({ schemaVersion: 2, data: 'x' }, NOW)).toEqual({ data: 'x', fromVersion: 2 });
   });
 
   it('formatos desconhecidos são recusados', () => {
     expect(migrate(null, NOW)).toEqual({ error: 'unknown-format' });
-    expect(migrate({ schemaVersion: 3, data: {} }, NOW)).toEqual({ error: 'future-version' });
+    expect(migrate({ schemaVersion: CURRENT_SCHEMA_VERSION + 1, data: {} }, NOW)).toEqual({
+      error: 'future-version',
+    });
   });
 });
 
@@ -248,6 +267,8 @@ describe('store Zustand', () => {
     await gameStore.getState().whenSaved();
     const ids = gameStore.getState().state.entries.map((e) => e.id);
     expect(new Set(ids).size).toBe(2);
-    expect(await AsyncStorage.getItem(STORAGE_KEY)).toContain('"schemaVersion":2');
+    expect(await AsyncStorage.getItem(STORAGE_KEY)).toContain(
+      `"schemaVersion":${CURRENT_SCHEMA_VERSION}`,
+    );
   });
 });

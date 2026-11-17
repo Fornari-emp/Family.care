@@ -8,7 +8,7 @@ import { CATEGORY_IDS } from '@/domain/categories';
 import { isValidDayKey } from '@/domain/dates';
 import type { GameState } from '@/domain/types';
 
-export const CURRENT_SCHEMA_VERSION = 2;
+export const CURRENT_SCHEMA_VERSION = 3;
 
 const dayKey = z.string().refine(isValidDayKey, 'data inválida');
 const weekKey = z.string().regex(/^\d{4}-W\d{2}$/);
@@ -59,6 +59,7 @@ export const gameStateSchema = z.object({
       minute: int.min(0).max(59),
     }),
     maxAmountCents: cents.min(100),
+    publicLeague: z.boolean(),
   }),
   xp: nonNeg,
   coins: nonNeg,
@@ -106,6 +107,10 @@ export const gameStateSchema = z.object({
     chestsOpened: nonNeg,
     leaguePodiums: nonNeg,
   }),
+  tombstones: z.array(
+    z.object({ kind: z.enum(['entry', 'goal']), id: z.string().min(1), at: iso }),
+  ),
+  updatedAt: iso,
 }) satisfies z.ZodType<GameState>;
 
 export interface Envelope {

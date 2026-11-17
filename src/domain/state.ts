@@ -7,6 +7,8 @@ import { emptyStreak } from './streak';
 import type { GameState, Profile } from './types';
 
 export const STARTING_COINS = 150;
+/** `updatedAt` de um estado sem nenhuma ação do usuário (perde para qualquer outro). */
+export const PRISTINE_UPDATED_AT = '1970-01-01T00:00:00.000Z';
 
 export function defaultProfile(timeZone: string = DEFAULT_TIME_ZONE): Profile {
   return {
@@ -17,6 +19,7 @@ export function defaultProfile(timeZone: string = DEFAULT_TIME_ZONE): Profile {
     haptics: true,
     reminder: { enabled: false, hour: 20, minute: 0 },
     maxAmountCents: DEFAULT_MAX_AMOUNT_CENTS,
+    publicLeague: false,
   };
 }
 
@@ -37,5 +40,7 @@ export function defaultState(now: Date, profile: Profile = defaultProfile()): Ga
     ownedItems: [DEFAULT_SUIT],
     equipped: defaultEquipped(),
     stats: { contributionsCount: 0, tipsRead: 0, purchases: 0, chestsOpened: 0, leaguePodiums: 0 },
+    tombstones: [],
+    updatedAt: PRISTINE_UPDATED_AT,
   };
 }

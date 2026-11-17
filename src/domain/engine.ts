@@ -57,6 +57,7 @@ import type {
   GameState,
   Profile,
   ShopSlot,
+  Tombstone,
   WeeklyMissionId,
 } from './types';
 
@@ -96,7 +97,16 @@ export type Action =
   | {
       type: 'UPDATE_PROFILE';
       patch: Partial<
-        Pick<Profile, 'nickname' | 'timeZone' | 'sound' | 'haptics' | 'reminder' | 'maxAmountCents'>
+        Pick<
+          Profile,
+          | 'nickname'
+          | 'timeZone'
+          | 'sound'
+          | 'haptics'
+          | 'reminder'
+          | 'maxAmountCents'
+          | 'publicLeague'
+        >
       >;
     }
   | { type: 'COMPLETE_ONBOARDING'; nickname: string; firstGoal?: GoalInput }
@@ -410,12 +420,29 @@ function editEntry(
   return { state: { ...state, entries } };
 }
 
-function deleteEntry(state: GameState, id: string, events: GameEvent[]): Step {
+function deleteEntry(state: GameState, id: string, now: Date, events: GameEvent[]): Step {
   if (!state.entries.some((e) => e.id === id)) return { error: 'entry-not-found' };
   const entries = state.entries.filter((e) => e.id !== id);
   if (hasNegativeBalance(entries)) return { error: 'negative-balance' };
   events.push({ type: 'entryDeleted', id });
-  return { state: { ...state, entries } };
+  return {
+    state: { ...state, entries, tombstones: addTombstones(state.tombstones, 'entry', [id], now) },
+  };
+}
+
+const MAX_TOMBSTONES = 2000;
+
+/** Registra exclusões (para a sincronização não "ressuscitar" registros). */
+export function addTombstones(
+  current: readonly Tombstone[],
+  kind: Tombstone['kind'],
+  ids: readonly string[],
+  now: Date,
+): Tombstone[] {
+  const at = now.toISOString();
+  const fresh = ids.map((id) => ({ kind, id, at }));
+  const rest = current.filter((t) => !(t.kind === kind && ids.includes(t.id)));
+  return [...rest, ...fresh].slice(-MAX_TOMBSTONES);
 }
 
 // ---------------------------------------------------------------------------
@@ -444,6 +471,7 @@ function updateProfile(
   }
   if (patch.sound !== undefined) profile.sound = patch.sound;
   if (patch.haptics !== undefined) profile.haptics = patch.haptics;
+  if (patch.publicLeague !== undefined) profile.publicLeague = patch.publicLeague;
   if (patch.reminder !== undefined) {
     const { hour, minute } = patch.reminder;
     const ok =
@@ -484,7 +512,7 @@ function handle(state: GameState, action: Action, ctx: Ctx, events: GameEvent[])
       return editEntry(state, action.id, action.patch, action.confirmedLarge ?? false, ctx, events);
 
     case 'DELETE_ENTRY':
-      return deleteEntry(state, action.id, events);
+      return deleteEntry(state, action.id, ctx.now, events);
 
     case 'READ_TIP': {
       if (state.daily.tipRead) return { state };
@@ -585,7 +613,13 @@ function handle(state: GameState, action: Action, ctx: Ctx, events: GameEvent[])
       if (!goal) return { error: 'not-found' };
       if (goal.kind !== 'custom') return { error: 'not-custom' };
       events.push({ type: 'goalDeleted', id: goal.id });
-      return { state: { ...state, goals: state.goals.filter((g) => g.id !== goal.id) } };
+      return {
+        state: {
+          ...state,
+          goals: state.goals.filter((g) => g.id !== goal.id),
+          tombstones: addTombstones(state.tombstones, 'goal', [goal.id], ctx.now),
+        },
+      };
     }
 
     case 'BUY': {
@@ -631,8 +665,21 @@ function handle(state: GameState, action: Action, ctx: Ctx, events: GameEvent[])
       if (action.confirmation.trim() !== RESET_CONFIRMATION)
         return { error: 'invalid-confirmation' };
       events.push({ type: 'reset' });
-      // Reinicia o progresso; preferências do perfil são mantidas.
-      return { state: defaultState(ctx.now, state.profile) };
+      // Reinicia o progresso; preferências do perfil são mantidas. As lápides garantem
+      // que os registros apagados não voltem de outro aparelho ao sincronizar.
+      let tombstones = addTombstones(
+        state.tombstones,
+        'entry',
+        state.entries.map((e) => e.id),
+        ctx.now,
+      );
+      tombstones = addTombstones(
+        tombstones,
+        'goal',
+        state.goals.filter((g) => g.kind === 'custom').map((g) => g.id),
+        ctx.now,
+      );
+      return { state: { ...defaultState(ctx.now, state.profile), tombstones } };
     }
   }
 }
@@ -648,6 +695,8 @@ export function applyAction(state: GameState, action: Action, ctx: Ctx): Result 
     return { state: synced, events: events.slice(0, syncEventCount), error: step.error };
   }
   let s = step.state;
+  // Marca a última ação real do usuário (a virada de dia sozinha não conta).
+  if (action.type !== 'SYNC' && s !== synced) s = { ...s, updatedAt: ctx.now.toISOString() };
   if (action.type !== 'RESET') {
     const unlocked = newlyUnlocked(s);
     if (unlocked.length > 0) {

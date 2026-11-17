@@ -5,6 +5,7 @@
  * - v1: centavos, ids de categoria, sequência por ação válida…
  * - v2: limite semanal de resgate de meta pessoal (`weekly.customGoalRewarded`) e
  *   `goal.editedAt` opcional (anti-farm de metas).
+ * - v3: sincronização — `updatedAt`, `tombstones` e `profile.publicLeague`.
  *
  * Cada migração recebe o `data` da versão N e devolve o da versão N+1.
  */
@@ -117,10 +118,22 @@ function v1ToV2(data: unknown): unknown {
   return { ...data, weekly: { ...data.weekly, customGoalRewarded: false } };
 }
 
+/** v2 → v3: campos de sincronização. O estado local existente conta como "agora". */
+function v2ToV3(data: unknown, now: Date): unknown {
+  if (!isObj(data) || !isObj(data.profile)) return data; // o schema rejeita depois
+  return {
+    ...data,
+    profile: { ...data.profile, publicLeague: false },
+    tombstones: [],
+    updatedAt: now.toISOString(),
+  };
+}
+
 /** `MIGRATIONS[n]` leva da versão n para n+1. */
 const MIGRATIONS: Record<number, Migration> = {
   0: v0ToV1,
   1: v1ToV2,
+  2: v2ToV3,
 };
 
 function looksLikePrototype(raw: Record<string, unknown>): boolean {

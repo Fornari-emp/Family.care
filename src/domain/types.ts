@@ -112,6 +112,16 @@ export interface Profile {
   reminder: { enabled: boolean; hour: number; minute: number };
   /** Valor máximo aceito por registro. */
   maxAmountCents: Cents;
+  /** Participa da liga com outras pessoas (mostra apelido e XP semanal). */
+  publicLeague: boolean;
+}
+
+/** Marca de exclusão: impede que um registro apagado volte ao sincronizar. */
+export interface Tombstone {
+  kind: 'entry' | 'goal';
+  id: string;
+  /** Instante da exclusão (ISO UTC). */
+  at: string;
 }
 
 export interface Stats {
@@ -136,4 +146,7 @@ export interface GameState {
   ownedItems: string[];
   equipped: Equipped;
   stats: Stats;
+  tombstones: Tombstone[];
+  /** Última ação do usuário (ISO). Define qual progresso vence ao sincronizar. */
+  updatedAt: string;
 }
