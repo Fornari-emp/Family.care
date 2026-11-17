@@ -41,7 +41,7 @@ describe('backup pela interface', () => {
     await waitFor(() => expect(share).toHaveBeenCalled());
     const msg = share.mock.calls[0]![0] as { message: string };
     expect(JSON.parse(msg.message)).toMatchObject({
-      schemaVersion: 1,
+      schemaVersion: 2,
       data: { profile: { nickname: 'Ana' } },
     });
   });
@@ -146,6 +146,29 @@ describe('metas personalizadas', () => {
     await fireEvent.press(await screen.findByLabelText('Excluir meta'));
     await fireEvent.press(await screen.findByLabelText('Excluir'));
     await waitFor(() => expect(state().goals.some((g) => g.kind === 'custom')).toBe(false));
+  });
+});
+
+describe('anti-farm de metas na interface', () => {
+  it('meta alcançada com aporte de hoje mostra quando libera, sem botão de resgate', async () => {
+    const s = defaultState(new Date());
+    const today = s.daily.day;
+    const withEntry = applyAction(
+      { ...s, profile: { ...s.profile, onboarded: true } },
+      {
+        type: 'ADD_ENTRY',
+        entry: { kind: 'contribution', amountCents: 100_000, category: 'cdb', day: today },
+      },
+      { now: new Date(), newId: () => 'e1' },
+    ).state;
+    await AsyncStorage.setItem(STORAGE_KEY, serialize(withEntry, new Date()));
+    await renderRouter('./app', { initialUrl: '/metas' });
+    expect(
+      await screen.findByLabelText(
+        /^Meta alcançada! Resgate a partir de .*aportes precisam de 3 dias/,
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByLabelText(/^Resgatar 200 moedas/)).toBeNull();
   });
 });
 

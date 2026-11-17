@@ -75,6 +75,8 @@ export interface WeeklyState {
   /** Maior sequência atingida nesta semana (missão "Manter 7 dias"). */
   bestStreak: number;
   claimed: WeeklyMissionId[];
+  /** Já resgatou uma meta pessoal nesta semana (limite de 1). */
+  customGoalRewarded: boolean;
 }
 
 /** Semanas ISO seguidas com pelo menos um aporte (constância > volume). */
@@ -97,6 +99,8 @@ export interface Goal {
   rewardXp: number;
   claimed: boolean;
   createdAt: string;
+  /** Última edição (reinicia a carência de 7 dias das metas pessoais). */
+  editedAt?: string;
 }
 
 export interface Profile {

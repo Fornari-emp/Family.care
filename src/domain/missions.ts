@@ -87,7 +87,14 @@ export function emptyDaily(day: DayKey): DailyState {
 }
 
 export function emptyWeekly(week: WeekKey): WeeklyState {
-  return { week, xp: 0, contributionDays: [], bestStreak: 0, claimed: [] };
+  return {
+    week,
+    xp: 0,
+    contributionDays: [],
+    bestStreak: 0,
+    claimed: [],
+    customGoalRewarded: false,
+  };
 }
 
 export interface DailyCompletion {

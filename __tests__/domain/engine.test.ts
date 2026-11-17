@@ -149,7 +149,9 @@ describe('bug 10: vários níveis de uma vez', () => {
     let s = ok(fresh(AM), contribution(1_000_000, TUE), AM).state;
     const coinsBefore = s.coins;
     const xpBefore = s.xp;
-    const r = ok(s, { type: 'CLAIM_GOAL', id: 'g-10k' }, AM);
+    const LATER = '2026-11-20T10:00:00'; // aportes precisam de 3 dias para contar na meta
+    s = ok(s, { type: 'SYNC' }, LATER).state;
+    const r = ok(s, { type: 'CLAIM_GOAL', id: 'g-10k' }, LATER);
     const lvl = r.events.find((e) => e.type === 'levelUp');
     expect(lvl).toEqual({
       type: 'levelUp',
@@ -282,16 +284,17 @@ describe('bug 14: editar e excluir aportes', () => {
 
   it('excluir reavalia metas e meta resgatada não paga de novo', () => {
     const { s, id } = withEntry();
-    const claimed = ok(s, { type: 'CLAIM_GOAL', id: 'g-1k' }, AM).state;
-    const del = ok(claimed, { type: 'DELETE_ENTRY', id }, AM);
+    const L = '2026-11-20T10:00:00';
+    const claimed = ok(s, { type: 'CLAIM_GOAL', id: 'g-1k' }, L).state;
+    const del = ok(claimed, { type: 'DELETE_ENTRY', id }, L);
     expect(totalInvested(del.state.entries)).toBe(0);
     expect(del.state.xp).toBe(claimed.xp);
-    expect(act(del.state, { type: 'CLAIM_GOAL', id: 'g-1k' }, AM).error).toBe('already-claimed');
-    const back = ok(del.state, contribution(200_000, TUE), AM).state;
-    expect(act(back, { type: 'CLAIM_GOAL', id: 'g-1k' }, AM).error).toBe('already-claimed');
-    expect(act(back, { type: 'CLAIM_GOAL', id: 'g-10k' }, AM).error).toBe('not-reached');
-    expect(act(back, { type: 'CLAIM_GOAL', id: 'nope' }, AM).error).toBe('not-found');
-    expect(act(back, { type: 'DELETE_ENTRY', id: 'nope' }, AM).error).toBe('entry-not-found');
+    expect(act(del.state, { type: 'CLAIM_GOAL', id: 'g-1k' }, L).error).toBe('already-claimed');
+    const back = ok(del.state, contribution(200_000, '2026-11-20'), L).state;
+    expect(act(back, { type: 'CLAIM_GOAL', id: 'g-1k' }, L).error).toBe('already-claimed');
+    expect(act(back, { type: 'CLAIM_GOAL', id: 'g-10k' }, L).error).toBe('not-reached');
+    expect(act(back, { type: 'CLAIM_GOAL', id: 'nope' }, L).error).toBe('not-found');
+    expect(act(back, { type: 'DELETE_ENTRY', id: 'nope' }, L).error).toBe('entry-not-found');
   });
 });
 
@@ -330,7 +333,8 @@ describe('metas personalizadas, perfil e onboarding', () => {
     ).state;
     expect(s.goals.at(-1)).toMatchObject({ name: 'Viagem 2', targetCents: 5_000 });
     s = ok(s, contribution(5_000, TUE), AM).state;
-    const claim = ok(s, { type: 'CLAIM_GOAL', id }, AM);
+    const WEEK_LATER = '2026-11-24T10:00:00'; // 7 dias após a edição
+    const claim = ok(s, { type: 'CLAIM_GOAL', id }, WEEK_LATER);
     expect(claim.events).toContainEqual({
       type: 'achievement',
       id: 'custom-goal',

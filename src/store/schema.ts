@@ -8,7 +8,7 @@ import { CATEGORY_IDS } from '@/domain/categories';
 import { isValidDayKey } from '@/domain/dates';
 import type { GameState } from '@/domain/types';
 
-export const CURRENT_SCHEMA_VERSION = 1;
+export const CURRENT_SCHEMA_VERSION = 2;
 
 const dayKey = z.string().refine(isValidDayKey, 'data inválida');
 const weekKey = z.string().regex(/^\d{4}-W\d{2}$/);
@@ -40,6 +40,7 @@ const goal = z.object({
   rewardXp: nonNeg,
   claimed: z.boolean(),
   createdAt: iso,
+  editedAt: iso.optional(),
 });
 
 const dailyMission = z.enum(['m-contribution', 'm-portfolio', 'm-tip', 'm-league']);
@@ -85,6 +86,7 @@ export const gameStateSchema = z.object({
     contributionDays: z.array(dayKey),
     bestStreak: nonNeg,
     claimed: z.array(weeklyMission),
+    customGoalRewarded: z.boolean(),
   }),
   weekRun: z.object({ count: nonNeg, best: nonNeg, lastWeek: weekKey.nullable() }),
   goals: z.array(goal),

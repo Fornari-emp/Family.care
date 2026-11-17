@@ -2,7 +2,9 @@
  * Migrações versionadas do estado persistido.
  *
  * - v0: formato do protótipo HTML (`window.storage`, valores em reais, categorias por nome).
- * - v1: formato atual (centavos, ids de categoria, sequência por ação válida…).
+ * - v1: centavos, ids de categoria, sequência por ação válida…
+ * - v2: limite semanal de resgate de meta pessoal (`weekly.customGoalRewarded`) e
+ *   `goal.editedAt` opcional (anti-farm de metas).
  *
  * Cada migração recebe o `data` da versão N e devolve o da versão N+1.
  */
@@ -109,9 +111,16 @@ function v0ToV1(data: unknown, now: Date): GameState {
   };
 }
 
+/** v1 → v2: adiciona o limite semanal de meta pessoal (começa liberado). */
+function v1ToV2(data: unknown): unknown {
+  if (!isObj(data) || !isObj(data.weekly)) return data; // o schema rejeita depois
+  return { ...data, weekly: { ...data.weekly, customGoalRewarded: false } };
+}
+
 /** `MIGRATIONS[n]` leva da versão n para n+1. */
 const MIGRATIONS: Record<number, Migration> = {
   0: v0ToV1,
+  1: v1ToV2,
 };
 
 function looksLikePrototype(raw: Record<string, unknown>): boolean {

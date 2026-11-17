@@ -169,9 +169,23 @@ describe('migração do protótipo (v0 → v1)', () => {
     expect(d.profile.nickname).toBe('Investidor');
   });
 
+  it('v1 → v2: adiciona o limite semanal de meta pessoal', async () => {
+    const current = defaultState(NOW);
+    const { customGoalRewarded: _omit, ...weeklyV1 } = current.weekly;
+    const storage = new MemoryStorage();
+    storage.data.set(
+      STORAGE_KEY,
+      JSON.stringify({ schemaVersion: 1, data: { ...current, weekly: weeklyV1 } }),
+    );
+    const r = await loadState(storage, NOW, silent);
+    expect(r.status).toBe('migrated');
+    expect(r.state).toEqual(current);
+    expect(migrate({ schemaVersion: 1, data: 'x' }, NOW)).toEqual({ data: 'x', fromVersion: 1 });
+  });
+
   it('formatos desconhecidos são recusados', () => {
     expect(migrate(null, NOW)).toEqual({ error: 'unknown-format' });
-    expect(migrate({ schemaVersion: 2, data: {} }, NOW)).toEqual({ error: 'future-version' });
+    expect(migrate({ schemaVersion: 3, data: {} }, NOW)).toEqual({ error: 'future-version' });
   });
 });
 
@@ -234,6 +248,6 @@ describe('store Zustand', () => {
     await gameStore.getState().whenSaved();
     const ids = gameStore.getState().state.entries.map((e) => e.id);
     expect(new Set(ids).size).toBe(2);
-    expect(await AsyncStorage.getItem(STORAGE_KEY)).toContain('"schemaVersion":1');
+    expect(await AsyncStorage.getItem(STORAGE_KEY)).toContain('"schemaVersion":2');
   });
 });

@@ -19,11 +19,12 @@ class Mem implements KeyValueStorage {
 
 /** Estado "rico": aportes, resgate, metas, compras, sequência, conquistas. */
 function richState() {
-  let s = { ...fresh('2026-11-16T10:00:00'), coins: 5000 };
+  // Primeiro aporte uma semana antes, para já contar no resgate da meta.
+  let s = { ...fresh('2026-11-09T10:00:00'), coins: 5000 };
   s = ok(
     s,
-    contribution(150_000, '2026-11-16', 'fii', { note: 'primeiro' }),
-    '2026-11-16T10:00:00',
+    contribution(150_000, '2026-11-09', 'fii', { note: 'primeiro' }),
+    '2026-11-09T10:00:00',
   ).state;
   s = ok(s, { type: 'READ_TIP' }, '2026-11-16T11:00:00').state;
   s = ok(s, contribution(30_000, '2026-11-17', 'acoes'), '2026-11-17T09:00:00').state;
@@ -89,7 +90,7 @@ describe('aceite da Fase 3: importar o próprio backup restaura o estado idênti
     const reloaded = createGameStore({ storage, clock: () => NOW, logger: silent });
     await reloaded.getState().hydrate();
     expect(reloaded.getState().state).toEqual(original);
-    expect(storage.data.get(STORAGE_KEY)).toContain('"schemaVersion":1');
+    expect(storage.data.get(STORAGE_KEY)).toContain('"schemaVersion":2');
   });
 
   it('o estado importado continua jogável', () => {

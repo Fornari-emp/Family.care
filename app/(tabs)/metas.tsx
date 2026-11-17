@@ -14,7 +14,12 @@ import { Screen } from '@/components/Screen';
 import { SectionHeader } from '@/components/SectionHeader';
 import { getCategory } from '@/domain/categories';
 import { daysLeftInWeek, weekElapsedFraction } from '@/domain/dates';
-import { evaluateGoal } from '@/domain/goals';
+import {
+  CUSTOM_GOAL_MIN_AGE_DAYS,
+  evaluateGoal,
+  GOAL_SETTLE_DAYS,
+  type GoalView,
+} from '@/domain/goals';
 import { LEAGUE_DISCLAIMER, LEAGUE_NAME, leagueStandings } from '@/domain/league';
 import { formatBRL } from '@/domain/money';
 import type { Goal } from '@/domain/types';
@@ -25,10 +30,25 @@ import { useGame } from '@/store';
 import { alpha, colors, fonts, radius } from '@/theme';
 import { formatDay, plural } from '@/ui/format';
 
+/** Explica por que uma meta alcançada ainda não pode ser resgatada (anti-farm). */
+function waitingText(v: GoalView, weeklyLimited: boolean, today: string): string {
+  if (!v.waiting) return 'Limite de 1 meta pessoal por semana atingido. Libera na segunda-feira.';
+  const parts: string[] = [];
+  if (v.waiting.reasons.includes('settling'))
+    parts.push(`aportes precisam de ${GOAL_SETTLE_DAYS} dias de registro`);
+  if (v.waiting.reasons.includes('too-recent'))
+    parts.push(`metas pessoais liberam ${CUSTOM_GOAL_MIN_AGE_DAYS} dias após criadas ou editadas`);
+  const when = formatDay(v.waiting.availableOn, today);
+  const limit = weeklyLimited ? ' (e respeitando 1 meta pessoal por semana)' : '';
+  return `Meta alcançada! Resgate a partir de ${when}: ${parts.join(' e ')}${limit}.`;
+}
+
 function Goals() {
   const goals = useGame((s) => s.state.goals);
   const entries = useGame((s) => s.state.entries);
   const today = useToday();
+  const tz = useGame((s) => s.state.profile.timeZone);
+  const customGoalRewarded = useGame((s) => s.state.weekly.customGoalRewarded);
   const doAct = useAct();
   const insets = useSafeAreaInsets();
   // null = fechado; 'new' = criar; Goal = editar
@@ -50,7 +70,8 @@ function Goals() {
         }
       />
       {goals.map((g) => {
-        const v = evaluateGoal(g, entries, today);
+        const v = evaluateGoal(g, entries, today, tz);
+        const weeklyLimited = g.kind === 'custom' && customGoalRewarded;
         const pct = Math.round(v.ratio * 100);
         const scope = g.category ? ` em ${getCategory(g.category).name}` : '';
         return (
@@ -86,13 +107,24 @@ function Goals() {
                   Recompensa resgatada
                 </AppText>
               </View>
-            ) : v.claimable ? (
+            ) : v.claimable && !weeklyLimited ? (
               <Button
                 label="Resgatar recompensa"
                 style={styles.mt}
                 onPress={() => doAct({ type: 'CLAIM_GOAL', id: g.id })}
                 accessibilityLabel={`Resgatar ${g.rewardCoins} moedas e ${g.rewardXp} XP da meta ${g.name}`}
               />
+            ) : v.reached ? (
+              <View
+                style={styles.waiting}
+                accessible
+                accessibilityLabel={waitingText(v, weeklyLimited, today)}
+              >
+                <Icon name="lock" size={14} color={colors.gold} />
+                <AppText variant="small" color={colors.goldLight} style={styles.flex}>
+                  {waitingText(v, weeklyLimited, today)}
+                </AppText>
+              </View>
             ) : null}
             {g.kind === 'custom' ? (
               <View style={styles.manage}>
@@ -244,6 +276,15 @@ export default function GoalsScreen() {
 }
 
 const styles = StyleSheet.create({
+  waiting: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'flex-start',
+    marginTop: 10,
+    padding: 10,
+    borderRadius: radius.md,
+    backgroundColor: alpha(colors.gold, 0.08),
+  },
   manage: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 10 },
   modal: { flex: 1, backgroundColor: colors.bg, paddingHorizontal: 16 },
   modalContent: { paddingVertical: 16, paddingBottom: 40 },

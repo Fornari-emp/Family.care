@@ -8,7 +8,7 @@ import { Dialog } from './Dialog';
 import { TextField } from './TextField';
 import { CATEGORIES } from '@/domain/categories';
 import { addMonths } from '@/domain/dates';
-import { CUSTOM_GOAL_REWARD, MAX_GOAL_NAME } from '@/domain/goals';
+import { CUSTOM_GOAL_MIN_AGE_DAYS, CUSTOM_GOAL_REWARD, MAX_GOAL_NAME } from '@/domain/goals';
 import { maskBRLInput } from '@/domain/money';
 import type { CategoryId, Goal } from '@/domain/types';
 import { useAct } from '@/feedback/useAct';
@@ -109,7 +109,8 @@ export function GoalForm({ editing, onDone }: { editing?: Goal; onDone: () => vo
 
       <AppText variant="caption">
         Ao concluir: +{CUSTOM_GOAL_REWARD.coins} moedas e +{CUSTOM_GOAL_REWARD.xp} XP, uma única
-        vez.
+        vez. O resgate libera {CUSTOM_GOAL_MIN_AGE_DAYS} dias após criar ou editar a meta, com até 1
+        meta pessoal por semana.
       </AppText>
       <Button
         label={editing ? 'Salvar meta' : 'Criar meta'}

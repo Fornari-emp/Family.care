@@ -1,5 +1,6 @@
 /** Mensagens amigáveis para cada erro do domínio (item 26). */
 import type { EngineError } from '@/domain/engine';
+import { CUSTOM_GOAL_MIN_AGE_DAYS, GOAL_SETTLE_DAYS } from '@/domain/goals';
 import { formatBRL } from '@/domain/money';
 import { MAX_BACKDATE_DAYS, MIN_AMOUNT_CENTS } from '@/domain/rewards';
 
@@ -19,6 +20,9 @@ const MESSAGES: Record<EngineError, string> = {
   'invalid-deadline': 'O prazo precisa ser hoje ou depois.',
   'too-many-goals': 'Você atingiu o limite de metas personalizadas.',
   'not-custom': 'Metas padrão não podem ser alteradas.',
+  'not-settled': `Os aportes que completam essa meta precisam ter ${GOAL_SETTLE_DAYS} dias de registro.`,
+  'goal-too-recent': `Metas pessoais podem ser resgatadas ${CUSTOM_GOAL_MIN_AGE_DAYS} dias após criadas ou editadas.`,
+  'weekly-goal-limit': 'Você já resgatou uma meta pessoal nesta semana. Volte na próxima!',
   'already-owned': 'Você já tem esse item.',
   'not-owned': 'Compre o item antes de equipar.',
   'insufficient-coins': 'Moedas insuficientes.',

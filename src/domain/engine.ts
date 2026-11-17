@@ -531,12 +531,18 @@ function handle(state: GameState, action: Action, ctx: Ctx, events: GameEvent[])
       const goal = state.goals.find((g) => g.id === action.id);
       if (!goal) return { error: 'not-found' };
       if (goal.claimed) return { error: 'already-claimed' };
-      if (!evaluateGoal(goal, state.entries, today).reached) return { error: 'not-reached' };
+      const view = evaluateGoal(goal, state.entries, today, state.profile.timeZone);
+      if (!view.reached) return { error: 'not-reached' };
+      if (view.waiting?.reasons.includes('settling')) return { error: 'not-settled' };
+      if (view.waiting?.reasons.includes('too-recent')) return { error: 'goal-too-recent' };
+      const isCustom = goal.kind === 'custom';
+      if (isCustom && state.weekly.customGoalRewarded) return { error: 'weekly-goal-limit' };
       const goals = state.goals.map((g) => (g.id === goal.id ? { ...g, claimed: true } : g));
+      const weekly = isCustom ? { ...state.weekly, customGoalRewarded: true } : state.weekly;
       events.push({ type: 'goalClaimed', id: goal.id, coins: goal.rewardCoins, xp: goal.rewardXp });
       return {
         state: grant(
-          { ...state, goals },
+          { ...state, goals, weekly },
           goal.rewardXp,
           goal.rewardCoins,
           'Meta concluída',
@@ -563,7 +569,11 @@ function handle(state: GameState, action: Action, ctx: Ctx, events: GameEvent[])
       if (goal.claimed) return { error: 'already-claimed' };
       const err = validateGoalInput(action.goal, today);
       if (err) return { error: err };
-      const edited = createCustomGoal(goal.id, action.goal, goal.createdAt);
+      // Editar reinicia a carência de 7 dias (evita baixar o alvo para resgatar na hora).
+      const edited = {
+        ...createCustomGoal(goal.id, action.goal, goal.createdAt),
+        editedAt: ctx.now.toISOString(),
+      };
       events.push({ type: 'goalSaved', id: goal.id });
       return {
         state: { ...state, goals: state.goals.map((g) => (g.id === goal.id ? edited : g)) },
