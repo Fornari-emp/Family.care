@@ -129,3 +129,15 @@ export function formatCountdown(ms: number): string {
   const ss = total % 60;
   return [hh, mm, ss].map((n) => String(n).padStart(2, '0')).join(':');
 }
+
+/** Soma meses a uma data civil, ajustando para o último dia do mês (31/01 + 1 → 28/02). */
+export function addMonths(key: DayKey, n: number): DayKey {
+  const m = DAY_KEY_RE.exec(key);
+  if (!m) throw new Error(`DayKey inválida: ${key}`);
+  const total = Number(m[1]) * 12 + (Number(m[2]) - 1) + n;
+  const y = Math.floor(total / 12);
+  const mo = total % 12;
+  const lastDay = new Date(Date.UTC(y, mo + 1, 0)).getUTCDate();
+  const d = Math.min(Number(m[3]), lastDay);
+  return fromUtcMs(Date.UTC(y, mo, d));
+}

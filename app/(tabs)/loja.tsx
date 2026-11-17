@@ -6,6 +6,7 @@ import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { Character, describeLoadout } from '@/components/Character';
 import { Dialog } from '@/components/Dialog';
+import { FreezeCard } from '@/components/FreezeCard';
 import { Icon, isIconName } from '@/components/Icon';
 import { Screen } from '@/components/Screen';
 import { SectionHeader } from '@/components/SectionHeader';
@@ -59,6 +60,8 @@ export default function ShopScreen() {
           </AppText>
         )}
       </Card>
+
+      <FreezeCard />
 
       {SHOP_GROUPS.map((g) => (
         <View key={g.slot} style={styles.group}>

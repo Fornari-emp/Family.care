@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/AppText';
+import { BackupSettings } from '@/components/BackupSettings';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { Chip } from '@/components/Chip';
 import { Dialog } from '@/components/Dialog';
 import { Icon, isIconName } from '@/components/Icon';
+import { ReminderSettings } from '@/components/ReminderSettings';
 import { Screen } from '@/components/Screen';
 import { SectionHeader } from '@/components/SectionHeader';
 import { SwitchRow } from '@/components/SwitchRow';
@@ -134,6 +136,16 @@ export default function ProfileScreen() {
             />
           ))}
         </View>
+      </Card>
+
+      <Card>
+        <SectionHeader title="Lembrete" />
+        <ReminderSettings />
+      </Card>
+
+      <Card>
+        <SectionHeader title="Backup" />
+        <BackupSettings />
       </Card>
 
       <Button

@@ -9,6 +9,7 @@ import { Card } from '@/components/Card';
 import { Character, describeLoadout } from '@/components/Character';
 import { Chip } from '@/components/Chip';
 import { Icon } from '@/components/Icon';
+import { IndicatorsCard } from '@/components/IndicatorsCard';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Screen } from '@/components/Screen';
 import { SectionHeader } from '@/components/SectionHeader';
@@ -327,6 +328,7 @@ export default function HomeScreen() {
       <ChestCard />
       <StreakCard />
       <TotalCard />
+      <IndicatorsCard />
       <TipCard />
       <Missions />
     </Screen>

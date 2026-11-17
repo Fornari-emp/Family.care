@@ -1,10 +1,13 @@
 import { useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { Modal, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { Dialog } from '@/components/Dialog';
+import { GoalForm } from '@/components/GoalForm';
 import { Icon } from '@/components/Icon';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Screen } from '@/components/Screen';
@@ -14,6 +17,7 @@ import { daysLeftInWeek, weekElapsedFraction } from '@/domain/dates';
 import { evaluateGoal } from '@/domain/goals';
 import { LEAGUE_DISCLAIMER, LEAGUE_NAME, leagueStandings } from '@/domain/league';
 import { formatBRL } from '@/domain/money';
+import type { Goal } from '@/domain/types';
 import { useAct } from '@/feedback/useAct';
 import { useToday } from '@/hooks/useGameView';
 import { useNow } from '@/hooks/useNow';
@@ -26,10 +30,25 @@ function Goals() {
   const entries = useGame((s) => s.state.entries);
   const today = useToday();
   const doAct = useAct();
+  const insets = useSafeAreaInsets();
+  // null = fechado; 'new' = criar; Goal = editar
+  const [form, setForm] = useState<Goal | 'new' | null>(null);
+  const [toDelete, setToDelete] = useState<Goal | null>(null);
 
   return (
     <View>
-      <SectionHeader title="Metas de patrimônio" />
+      <SectionHeader
+        title="Metas de patrimônio"
+        right={
+          <Button
+            label="Nova meta"
+            icon="plus"
+            variant="ghost"
+            compact
+            onPress={() => setForm('new')}
+          />
+        }
+      />
       {goals.map((g) => {
         const v = evaluateGoal(g, entries, today);
         const pct = Math.round(v.ratio * 100);
@@ -75,9 +94,70 @@ function Goals() {
                 accessibilityLabel={`Resgatar ${g.rewardCoins} moedas e ${g.rewardXp} XP da meta ${g.name}`}
               />
             ) : null}
+            {g.kind === 'custom' ? (
+              <View style={styles.manage}>
+                {!g.claimed ? (
+                  <Button
+                    label="Editar"
+                    variant="secondary"
+                    compact
+                    onPress={() => setForm(g)}
+                    accessibilityLabel={`Editar meta ${g.name}`}
+                  />
+                ) : (
+                  <Button
+                    label="Excluir"
+                    variant="danger"
+                    compact
+                    onPress={() => setToDelete(g)}
+                    accessibilityLabel={`Excluir meta ${g.name}`}
+                  />
+                )}
+              </View>
+            ) : null}
           </Card>
         );
       })}
+
+      <Modal
+        visible={form !== null}
+        animationType="slide"
+        onRequestClose={() => setForm(null)}
+        presentationStyle="pageSheet"
+      >
+        <View style={[styles.modal, { paddingTop: insets.top + 16 }]}>
+          <View style={styles.rowBetween}>
+            <AppText variant="display" accessibilityRole="header">
+              {form === 'new' ? 'Nova meta' : 'Editar meta'}
+            </AppText>
+            <Button label="Fechar" variant="ghost" compact onPress={() => setForm(null)} />
+          </View>
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={styles.modalContent}
+          >
+            {form !== null ? (
+              <GoalForm editing={form === 'new' ? undefined : form} onDone={() => setForm(null)} />
+            ) : null}
+          </ScrollView>
+        </View>
+      </Modal>
+      <Dialog
+        visible={!!toDelete}
+        title="Excluir meta?"
+        message={
+          toDelete
+            ? `"${toDelete.name}" será removida. A recompensa já recebida continua com você.`
+            : ''
+        }
+        confirmLabel="Excluir"
+        destructive
+        onCancel={() => setToDelete(null)}
+        onConfirm={() => {
+          if (toDelete) doAct({ type: 'DELETE_GOAL', id: toDelete.id });
+          setToDelete(null);
+        }}
+      />
     </View>
   );
 }
@@ -164,6 +244,9 @@ export default function GoalsScreen() {
 }
 
 const styles = StyleSheet.create({
+  manage: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 10 },
+  modal: { flex: 1, backgroundColor: colors.bg, paddingHorizontal: 16 },
+  modalContent: { paddingVertical: 16, paddingBottom: 40 },
   flex: { flex: 1 },
   rowBetween: {
     flexDirection: 'row',

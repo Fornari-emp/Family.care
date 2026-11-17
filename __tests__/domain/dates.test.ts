@@ -1,5 +1,6 @@
 import {
   addDays,
+  addMonths,
   dayKey,
   daysBetween,
   daysLeftInWeek,
@@ -143,5 +144,16 @@ describe('fuso padrão (America/Sao_Paulo) quando não informado', () => {
     expect(msUntilNextDay(now)).toBe(2 * 3600_000);
     expect(startOfDayInstant('2026-11-23').toISOString()).toBe('2026-11-23T03:00:00.000Z');
     expect(weekElapsedFraction(now)).toBeGreaterThan(0.9);
+  });
+});
+
+describe('addMonths', () => {
+  it('soma meses e ajusta fim de mês', () => {
+    expect(addMonths('2026-11-17', 3)).toBe('2027-02-17');
+    expect(addMonths('2027-01-31', 1)).toBe('2027-02-28');
+    expect(addMonths('2028-01-31', 1)).toBe('2028-02-29');
+    expect(addMonths('2026-11-17', 24)).toBe('2028-11-17');
+    expect(addMonths('2026-03-31', -1)).toBe('2026-02-28');
+    expect(() => addMonths('x', 1)).toThrow();
   });
 });

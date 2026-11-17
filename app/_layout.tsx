@@ -17,6 +17,7 @@ import { dayKey } from '@/domain/dates';
 import { feedbackStore } from '@/feedback/feedbackStore';
 import { mapEvents } from '@/feedback/mapEvents';
 import { act } from '@/feedback/useAct';
+import { useReminderSync } from '@/notifications/useReminderSync';
 import { gameStore, useGame } from '@/store';
 import { colors } from '@/theme';
 
@@ -34,6 +35,7 @@ export default function RootLayout() {
     PlusJakartaSans_800ExtraBold,
   });
   const hydrated = useGame((s) => s.hydrated);
+  useReminderSync();
   const issue = useGame((s) => s.issue);
 
   useEffect(() => {
