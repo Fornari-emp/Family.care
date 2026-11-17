@@ -8,7 +8,12 @@ module.exports = {
   },
   testMatch: ['**/__tests__/**/*.test.ts?(x)'],
   testPathIgnorePatterns: ['/node_modules/', '/coverage/'],
-  collectCoverageFrom: ['src/domain/**/*.ts', 'src/store/**/*.ts', 'src/content/**/*.ts'],
+  collectCoverageFrom: [
+    'src/domain/**/*.ts',
+    'src/store/**/*.ts',
+    'src/content/**/*.ts',
+    'src/cloud/**/*.ts',
+  ],
   coverageThreshold: {
     './src/domain/': { statements: 90, branches: 90, functions: 90, lines: 90 },
   },
