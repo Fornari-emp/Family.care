@@ -62,3 +62,10 @@ export function playerPosition(week: WeekKey, elapsed: number, playerXp: number)
   );
   return row?.position ?? RIVALS.length + 1;
 }
+
+/**
+ * Teto de XP semanal plausível para a liga real (validado também no servidor).
+ * = 7 dias × (teto de aportes + missões diárias + baú) + metas padrão + 1 meta pessoal.
+ * Se as recompensas mudarem, o teste em `league-cap.test.ts` exige atualizar o SQL.
+ */
+export const MAX_WEEKLY_XP = 5250;

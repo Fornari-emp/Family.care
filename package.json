@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
-    "test": "jest --coverage"
+    "test": "jest --coverage",
+    "test:sql": "bash scripts/test-sql.sh"
   },
   "dependencies": {
     "@expo-google-fonts/outfit": "^0.4.3",
