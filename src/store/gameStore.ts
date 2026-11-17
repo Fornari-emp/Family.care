@@ -20,6 +20,8 @@ export interface GameStore {
   hydrate: () => Promise<void>;
   dispatch: (action: Action) => Result;
   dismissIssue: () => void;
+  /** Substitui todo o estado (importar backup) e salva. */
+  importState: (state: GameState) => Promise<void>;
   /** Resolve quando todos os salvamentos pendentes terminarem. */
   whenSaved: () => Promise<void>;
 }
@@ -82,6 +84,13 @@ export function createGameStore(deps: StoreDeps): StoreApi<GameStore> {
       },
 
       dismissIssue: () => set({ issue: null }),
+
+      importState: async (state) => {
+        // Aplica a virada de dia no estado importado antes de exibir.
+        const synced = applyAction(state, { type: 'SYNC' }, { now: clock(), newId });
+        set({ state: synced.state, lastEvents: [] });
+        await persist(synced.state);
+      },
 
       whenSaved: () => saving.then(() => undefined),
     };
