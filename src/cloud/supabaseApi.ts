@@ -151,7 +151,7 @@ export function createSupabaseApi(client: SupabaseClient): CloudApi {
     },
 
     async deleteAccount() {
-      await call(client.functions.invoke('delete-account', { method: 'POST' }));
+      await call(client.rpc('delete_my_account'));
     },
   };
 }

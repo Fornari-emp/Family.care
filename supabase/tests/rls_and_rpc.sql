@@ -132,7 +132,25 @@ set local role anon;
 select pg_temp.expect_error($$select public.delete_my_cloud_data()$$, 'permission denied');
 commit;
 
--- apagar o usuário apaga tudo em cascata
-delete from auth.users where id = '00000000-0000-0000-0000-00000000000c';
+-- excluir a conta pelo app apaga login, estado e liga
+begin;
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000c', true);
+select public.save_state(0, 3, '{"v":1}');
+select public.join_league(pg_temp.week(), 'Caio');
+select public.delete_my_account();
+select pg_temp.check((select count(*) from public.game_states) = 0, 'C apagou o estado');
+commit;
+select pg_temp.check(
+  not exists (select 1 from auth.users where id = '00000000-0000-0000-0000-00000000000c'), 'C apagou o login');
+select pg_temp.check(
+  not exists (select 1 from public.league_members where user_id = '00000000-0000-0000-0000-00000000000c'), 'C saiu da liga');
+select pg_temp.check(
+  exists (select 1 from auth.users where id = '00000000-0000-0000-0000-00000000000b'), 'B não foi afetado');
+
+begin;
+set local role anon;
+select pg_temp.expect_error($$select public.delete_my_account()$$, 'permission denied');
+commit;
 
 \echo 'OK: todos os testes de SQL passaram'

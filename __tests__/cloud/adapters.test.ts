@@ -186,7 +186,7 @@ describe('adaptador Supabase', () => {
     ]);
     await api.leaveLeague('2026-W47');
     await api.deleteAccount();
-    expect(client.functions.invoke).toHaveBeenCalledWith('delete-account', { method: 'POST' });
+    expect(rpc).toHaveBeenCalledWith('delete_my_account');
     await api.signOut();
   });
 

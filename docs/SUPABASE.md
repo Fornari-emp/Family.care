@@ -11,8 +11,8 @@ com outras pessoas.
 ## 2. Criar as tabelas e regras de segurança
 Escolha **uma** das opções:
 
-- **Pelo painel:** *SQL Editor* → *New query* → cole o conteúdo de
-  `supabase/migrations/20261117000000_invest_level_init.sql` → *Run*.
+- **Pelo painel:** *SQL Editor* → *New query* → cole o conteúdo dos arquivos de
+  `supabase/migrations/`, **em ordem de nome** (um de cada vez ou todos juntos) → *Run*.
 - **Pela CLI:** `npx supabase login`, `npx supabase link --project-ref SEU_REF` e
   `npx supabase db push`.
 
@@ -33,12 +33,10 @@ com **RLS enabled**.
 3. **Produção:** o envio de e-mails padrão do Supabase tem limite baixo por hora. Configure um
    SMTP próprio em *Project Settings* → *Authentication* → *SMTP Settings*.
 
-## 4. Exclusão de conta (Edge Function)
-```bash
-npx supabase functions deploy delete-account
-```
-A função usa `SUPABASE_SERVICE_ROLE_KEY`, que o Supabase já injeta no servidor.
-**Nunca** coloque a service_role key no app.
+## 4. Exclusão de conta
+Não precisa de nada extra: a função `delete_my_account()` (criada pelo SQL do passo 2)
+apaga o login e todos os dados do usuário. A pasta `supabase/functions/delete-account`
+é uma alternativa via Edge Function e **não é usada** pelo app.
 
 ## 5. Ligar o app ao projeto
 1. *Project Settings* → *API*: copie a **Project URL** e a chave **anon public**.
